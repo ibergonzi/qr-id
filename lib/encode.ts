@@ -1,7 +1,7 @@
 export interface PersonData {
   n: string;   // nombre
   l: string;   // apellido
-  b: string;   // fecha de nacimiento (YYYY-MM-DD)
+  b?: string;  // fecha de nacimiento (YYYY-MM-DD) — opcional
   a: string;   // dirección
   e: string;   // email
   p: string;   // teléfono

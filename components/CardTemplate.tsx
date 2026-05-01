@@ -40,7 +40,9 @@ export default function CardTemplate({ data }: Props) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const waPhone = data.w.replace(/\D/g, '');
   const waMessage = encodeURIComponent(`Hola ${data.n}, te contacto a través de tu tarjeta digital.`);
-  const age = calcAge(data.b);
+  const birthValue = data.b
+    ? `${formatDate(data.b)} · ${calcAge(data.b)} años`
+    : 'No especificada';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-800 to-slate-700 flex items-center justify-center p-4">
@@ -75,11 +77,7 @@ export default function CardTemplate({ data }: Props) {
 
         {/* Información */}
         <div className="px-6 py-4 divide-y divide-gray-100">
-          <InfoRow
-            icon="📅"
-            label="Fecha de nacimiento"
-            value={`${formatDate(data.b)} · ${age} años`}
-          />
+          <InfoRow icon="📅" label="Fecha de nacimiento" value={birthValue} />
           <InfoRow icon="📍" label="Dirección" value={data.a} />
           <InfoRow icon="✉️" label="Email" value={data.e} href={`mailto:${data.e}`} />
         </div>

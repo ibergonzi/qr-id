@@ -8,10 +8,17 @@ import { generatePDF } from '@/lib/pdfGen';
 import PhotoUpload from '@/components/PhotoUpload';
 import QRPreview from '@/components/QRPreview';
 
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: CURRENT_YEAR - 1919 }, (_, i) => CURRENT_YEAR - i);
+
 interface FormFields {
   nombre: string;
   apellido: string;
-  fechaNacimiento: string;
   direccion: string;
   email: string;
   telefono: string;
@@ -20,12 +27,15 @@ interface FormFields {
 }
 
 const emptyForm: FormFields = {
-  nombre: '', apellido: '', fechaNacimiento: '',
-  direccion: '', email: '', telefono: '', whatsapp: '', descripcion: '',
+  nombre: '', apellido: '', direccion: '', email: '',
+  telefono: '', whatsapp: '', descripcion: '',
 };
 
 export default function CreatePage() {
   const [fields, setFields] = useState<FormFields>(emptyForm);
+  const [dateDay, setDateDay] = useState('');
+  const [dateMonth, setDateMonth] = useState('');
+  const [dateYear, setDateYear] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [loadedPhotoUrl, setLoadedPhotoUrl] = useState('');
   const [photoPreview, setPhotoPreview] = useState('');
@@ -33,10 +43,15 @@ export default function CreatePage() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<{ qrDataUrl: string; cardUrl: string } | null>(null);
 
-  // Load from URL state
+  // Load from URL
   const [showLoader, setShowLoader] = useState(false);
   const [loadUrl, setLoadUrl] = useState('');
   const [loadUrlError, setLoadUrlError] = useState('');
+
+  function getDateISO(): string {
+    if (!dateDay || !dateMonth || !dateYear) return '';
+    return `${dateYear}-${dateMonth.padStart(2, '0')}-${dateDay.padStart(2, '0')}`;
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -57,24 +72,16 @@ export default function CreatePage() {
 
   function handleLoadFromUrl() {
     setLoadUrlError('');
-    if (!loadUrl.trim()) {
-      setLoadUrlError('Ingresá una URL');
-      return;
-    }
+    if (!loadUrl.trim()) { setLoadUrlError('Ingresá una URL'); return; }
 
     let d: string | null = null;
     try {
-      const url = new URL(loadUrl.trim());
-      d = url.searchParams.get('d');
+      d = new URL(loadUrl.trim()).searchParams.get('d');
     } catch {
-      setLoadUrlError('URL inválida. Debe ser una URL completa (ej: https://qr-id-five.vercel.app/card?d=...)');
+      setLoadUrlError('URL inválida. Debe ser una URL completa (ej: https://...)');
       return;
     }
-
-    if (!d) {
-      setLoadUrlError('La URL no contiene datos de tarjeta (parámetro ?d= no encontrado)');
-      return;
-    }
+    if (!d) { setLoadUrlError('La URL no contiene datos de tarjeta (?d= no encontrado)'); return; }
 
     let data: PersonData;
     try {
@@ -83,22 +90,24 @@ export default function CreatePage() {
       setLoadUrlError('No se pudieron leer los datos. Verificá que la URL sea de una tarjeta válida');
       return;
     }
-
-    if (!data.n || !data.l || !data.b || !data.a || !data.e || !data.p || !data.w || !data.ph) {
+    if (!data.n || !data.l || !data.a || !data.e || !data.p || !data.w || !data.ph) {
       setLoadUrlError('Los datos de la tarjeta están incompletos o dañados');
       return;
     }
 
     setFields({
-      nombre: data.n,
-      apellido: data.l,
-      fechaNacimiento: data.b,
-      direccion: data.a,
-      email: data.e,
-      telefono: data.p,
-      whatsapp: data.w,
+      nombre: data.n, apellido: data.l, direccion: data.a,
+      email: data.e, telefono: data.p, whatsapp: data.w,
       descripcion: data.d || '',
     });
+    if (data.b) {
+      const [y, m, dd] = data.b.split('-');
+      setDateYear(y);
+      setDateMonth(String(parseInt(m)));
+      setDateDay(String(parseInt(dd)));
+    } else {
+      setDateYear(''); setDateMonth(''); setDateDay('');
+    }
     setLoadedPhotoUrl(data.ph);
     setPhotoPreview(data.ph);
     setPhotoFile(null);
@@ -109,9 +118,24 @@ export default function CreatePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!photoFile && !loadedPhotoUrl) {
-      setError('Seleccioná una foto antes de continuar.');
+    if (!photoFile && !loadedPhotoUrl) { setError('Seleccioná una foto antes de continuar.'); return; }
+
+    // Validar fecha: si algún campo está lleno, deben estar todos
+    const dateFilled = dateDay || dateMonth || dateYear;
+    const dateComplete = dateDay && dateMonth && dateYear;
+    if (dateFilled && !dateComplete) {
+      setError('Completá los tres campos de fecha o dejá todos vacíos.');
       return;
+    }
+
+    // Validar que la fecha sea real (ej: no 31 de febrero)
+    const dateISO = getDateISO();
+    if (dateISO) {
+      const parsed = new Date(dateISO);
+      if (isNaN(parsed.getTime()) || parsed.getDate() !== parseInt(dateDay)) {
+        setError('La fecha ingresada no es válida (ej: el mes seleccionado no tiene ese día).');
+        return;
+      }
     }
 
     setLoading(true);
@@ -123,12 +147,12 @@ export default function CreatePage() {
       const personData: PersonData = {
         n: fields.nombre.trim(),
         l: fields.apellido.trim(),
-        b: fields.fechaNacimiento,
         a: fields.direccion.trim(),
         e: fields.email.trim(),
         p: fields.telefono.trim(),
         w: fields.whatsapp.trim(),
         ph: finalPhotoUrl,
+        ...(dateISO && { b: dateISO }),
         ...(fields.descripcion.trim() && { d: fields.descripcion.trim() }),
       };
 
@@ -136,9 +160,7 @@ export default function CreatePage() {
       const cardUrl = `${window.location.origin}/card?d=${encoded}`;
 
       const qrDataUrl = await QRCode.toDataURL(cardUrl, {
-        width: 400,
-        margin: 2,
-        errorCorrectionLevel: 'M',
+        width: 400, margin: 2, errorCorrectionLevel: 'M',
         color: { dark: '#1e293b', light: '#ffffff' },
       });
 
@@ -153,20 +175,15 @@ export default function CreatePage() {
 
   function handleDownloadPDF() {
     if (!result) return;
-    const fullName = `${fields.nombre} ${fields.apellido}`;
-    generatePDF(result.qrDataUrl, fullName, result.cardUrl);
+    generatePDF(result.qrDataUrl, `${fields.nombre} ${fields.apellido}`, result.cardUrl);
   }
 
   function handleNew() {
     setResult(null);
     setFields(emptyForm);
-    setPhotoFile(null);
-    setLoadedPhotoUrl('');
-    setPhotoPreview('');
-    setError('');
-    setLoadUrl('');
-    setLoadUrlError('');
-    setShowLoader(false);
+    setDateDay(''); setDateMonth(''); setDateYear('');
+    setPhotoFile(null); setLoadedPhotoUrl(''); setPhotoPreview('');
+    setError(''); setLoadUrl(''); setLoadUrlError(''); setShowLoader(false);
   }
 
   if (result) {
@@ -184,11 +201,9 @@ export default function CreatePage() {
   return (
     <main className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-lg mx-auto">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">🪪 Crear tarjeta</h1>
-            <p className="text-gray-500 mt-1">Completá los datos para generar el código QR y el PDF</p>
-          </div>
+        <div className="mb-4">
+          <h1 className="text-3xl font-bold text-gray-800">🪪 Crear tarjeta</h1>
+          <p className="text-gray-500 mt-1">Completá los datos para generar el código QR y el PDF</p>
         </div>
 
         {/* Cargar desde tarjeta existente */}
@@ -201,12 +216,9 @@ export default function CreatePage() {
             <span className="text-xs">{showLoader ? '▲' : '▼'}</span>
             Cargar desde tarjeta existente
           </button>
-
           {showLoader && (
             <div className="mt-2 bg-white rounded-xl shadow p-4 space-y-2">
-              <p className="text-sm text-gray-500">
-                Pegá la URL de una tarjeta existente para pre-cargar todos sus datos
-              </p>
+              <p className="text-sm text-gray-500">Pegá la URL de una tarjeta existente para pre-cargar todos sus datos</p>
               <div className="flex gap-2">
                 <input
                   type="url"
@@ -216,11 +228,8 @@ export default function CreatePage() {
                   placeholder="https://qr-id-five.vercel.app/card?d=..."
                   className="input-field text-sm flex-1"
                 />
-                <button
-                  type="button"
-                  onClick={handleLoadFromUrl}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 rounded-lg transition-colors shrink-0"
-                >
+                <button type="button" onClick={handleLoadFromUrl}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 rounded-lg transition-colors shrink-0">
                   Cargar
                 </button>
               </div>
@@ -246,10 +255,32 @@ export default function CreatePage() {
             </div>
           </div>
 
+          {/* Fecha de nacimiento — tres selects */}
           <div>
-            <label className="form-label">Fecha de nacimiento</label>
-            <input type="date" name="fechaNacimiento" value={fields.fechaNacimiento}
-              onChange={handleChange} required className="input-field" />
+            <label className="form-label">
+              Fecha de nacimiento{' '}
+              <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <select value={dateDay} onChange={e => setDateDay(e.target.value)} className="input-field">
+                <option value="">Día</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                  <option key={d} value={String(d)}>{d}</option>
+                ))}
+              </select>
+              <select value={dateMonth} onChange={e => setDateMonth(e.target.value)} className="input-field">
+                <option value="">Mes</option>
+                {MESES.map((m, i) => (
+                  <option key={i} value={String(i + 1)}>{m}</option>
+                ))}
+              </select>
+              <select value={dateYear} onChange={e => setDateYear(e.target.value)} className="input-field">
+                <option value="">Año</option>
+                {YEARS.map(y => (
+                  <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
@@ -283,14 +314,9 @@ export default function CreatePage() {
               Descripción{' '}
               <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <textarea
-              name="descripcion"
-              value={fields.descripcion}
-              onChange={handleChange}
-              rows={3}
-              className="input-field resize-none"
-              placeholder='Ej: "Soy neurodivergente y no me comunico con palabras"'
-            />
+            <textarea name="descripcion" value={fields.descripcion} onChange={handleChange}
+              rows={3} className="input-field resize-none"
+              placeholder='Ej: "Soy neurodivergente y no me comunico con palabras"' />
           </div>
 
           {error && (
@@ -299,11 +325,8 @@ export default function CreatePage() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors text-lg"
-          >
+          <button type="submit" disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors text-lg">
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
