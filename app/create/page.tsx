@@ -129,10 +129,12 @@ export default function CreatePage() {
     }
 
     // Validar que la fecha sea real (ej: no 31 de febrero)
+    // Se usa el constructor (año, mes, día) en hora local para evitar problemas de timezone
     const dateISO = getDateISO();
     if (dateISO) {
-      const parsed = new Date(dateISO);
-      if (isNaN(parsed.getTime()) || parsed.getDate() !== parseInt(dateDay)) {
+      const d = parseInt(dateDay), m = parseInt(dateMonth), y = parseInt(dateYear);
+      const parsed = new Date(y, m - 1, d);
+      if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) {
         setError('La fecha ingresada no es válida (ej: el mes seleccionado no tiene ese día).');
         return;
       }
