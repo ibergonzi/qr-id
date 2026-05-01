@@ -4,7 +4,7 @@ import { useState } from 'react';
 import QRCode from 'qrcode';
 import { encodePersonData, decodePersonData, PersonData } from '@/lib/encode';
 import { uploadPhoto } from '@/lib/cloudinary';
-import { generatePDF } from '@/lib/pdfGen';
+import { generatePDF, getPDFBlob } from '@/lib/pdfGen';
 import PhotoUpload from '@/components/PhotoUpload';
 import QRPreview from '@/components/QRPreview';
 
@@ -180,6 +180,26 @@ export default function CreatePage() {
     generatePDF(result.qrDataUrl, `${fields.nombre} ${fields.apellido}`, result.cardUrl);
   }
 
+  async function handleSharePDF() {
+    if (!result) return;
+    const fullName = `${fields.nombre} ${fields.apellido}`;
+    const safeName = fullName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+    try {
+      const blob = await getPDFBlob(result.qrDataUrl, fullName, result.cardUrl);
+      const file = new File([blob], `${safeName}-qr-id.pdf`, { type: 'application/pdf' });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `QR-ID — ${fullName}` });
+      } else {
+        // Fallback: descarga directa si el browser no soporta compartir archivos
+        generatePDF(result.qrDataUrl, fullName, result.cardUrl);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        generatePDF(result.qrDataUrl, fullName, result.cardUrl);
+      }
+    }
+  }
+
   function handleNew() {
     setResult(null);
     setFields(emptyForm);
@@ -195,6 +215,7 @@ export default function CreatePage() {
         cardUrl={result.cardUrl}
         personName={`${fields.nombre} ${fields.apellido}`}
         onDownloadPDF={handleDownloadPDF}
+        onSharePDF={handleSharePDF}
         onNew={handleNew}
       />
     );

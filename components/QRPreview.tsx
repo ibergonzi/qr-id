@@ -5,10 +5,11 @@ interface Props {
   cardUrl: string;
   personName: string;
   onDownloadPDF: () => void;
+  onSharePDF: () => Promise<void>;
   onNew: () => void;
 }
 
-export default function QRPreview({ qrDataUrl, cardUrl, personName, onDownloadPDF, onNew }: Props) {
+export default function QRPreview({ qrDataUrl, cardUrl, personName, onDownloadPDF, onSharePDF, onNew }: Props) {
   function copyUrl() {
     navigator.clipboard.writeText(cardUrl).catch(() => {});
   }
@@ -34,12 +35,20 @@ export default function QRPreview({ qrDataUrl, cardUrl, personName, onDownloadPD
           </button>
 
           <div className="space-y-3">
-            <button
-              onClick={onDownloadPDF}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors text-lg"
-            >
-              Descargar PDF
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={onDownloadPDF}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors"
+              >
+                Descargar PDF
+              </button>
+              <button
+                onClick={onSharePDF}
+                className="bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold py-3 rounded-xl transition-colors"
+              >
+                Compartir PDF
+              </button>
+            </div>
             <button
               onClick={onNew}
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-xl transition-colors"
