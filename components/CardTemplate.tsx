@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { PersonData } from '@/lib/encode';
 
 interface Props {
@@ -34,6 +37,7 @@ function InfoRow({ icon, label, value, href }: { icon: string; label: string; va
 }
 
 export default function CardTemplate({ data }: Props) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const waPhone = data.w.replace(/\D/g, '');
   const waMessage = encodeURIComponent(`Hola ${data.n}, te contacto a través de tu tarjeta digital.`);
   const age = calcAge(data.b);
@@ -55,7 +59,8 @@ export default function CardTemplate({ data }: Props) {
               <img
                 src={data.ph}
                 alt={`${data.n} ${data.l}`}
-                className="w-20 h-20 rounded-full border-[3px] border-white shadow-lg object-cover"
+                onClick={() => setLightboxOpen(true)}
+                className="w-20 h-20 rounded-full border-[3px] border-white shadow-lg object-cover cursor-pointer active:opacity-80 transition-opacity"
               />
             </div>
 
@@ -101,6 +106,31 @@ export default function CardTemplate({ data }: Props) {
         </div>
 
       </div>
+
+      {/* Lightbox */}
+      <div
+        onClick={() => setLightboxOpen(false)}
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/85 transition-opacity duration-300 ${
+          lightboxOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <img
+          src={data.ph}
+          alt={`${data.n} ${data.l}`}
+          onClick={e => e.stopPropagation()}
+          className={`max-w-[90vw] max-h-[85vh] rounded-2xl shadow-2xl object-contain transition-transform duration-300 ${
+            lightboxOpen ? 'scale-100' : 'scale-90'
+          }`}
+        />
+        <button
+          onClick={() => setLightboxOpen(false)}
+          aria-label="Cerrar"
+          className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl leading-none"
+        >
+          ✕
+        </button>
+      </div>
+
     </div>
   );
 }
