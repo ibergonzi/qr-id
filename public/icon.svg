@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fondo azul con esquinas redondeadas -->
+  <rect width="512" height="512" rx="90" fill="#1d4ed8"/>
+
+  <!-- Tarjeta blanca -->
+  <rect x="72" y="148" width="368" height="240" rx="22" fill="white"/>
+
+  <!-- Foto (círculo celeste) -->
+  <circle cx="172" cy="248" r="58" fill="#93c5fd"/>
+  <circle cx="172" cy="228" r="22" fill="#bfdbfe"/>
+  <ellipse cx="172" cy="284" rx="36" ry="22" fill="#bfdbfe"/>
+
+  <!-- Líneas de texto -->
+  <rect x="258" y="198" width="144" height="18" rx="9" fill="#1d4ed8"/>
+  <rect x="258" y="232" width="116" height="13" rx="6" fill="#93c5fd"/>
+  <rect x="258" y="254" width="130" height="13" rx="6" fill="#93c5fd"/>
+  <rect x="258" y="276" width="100" height="13" rx="6" fill="#93c5fd"/>
+
+  <!-- Franja inferior (simula código de barras / QR) -->
+  <rect x="72" y="348" width="368" height="40" rx="0" fill="#eff6ff"/>
+  <rect x="72" y="348" width="368" height="40" rx="22" fill="#eff6ff"/>
+  <rect x="102" y="358" width="8"  height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="116" y="358" width="14" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="136" y="358" width="6"  height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="148" y="358" width="10" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="164" y="358" width="8"  height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="178" y="358" width="16" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="200" y="358" width="6"  height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="212" y="358" width="12" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="230" y="358" width="8"  height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="244" y="358" width="18" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="268" y="358" width="6"  height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="280" y="358" width="10" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="296" y="358" width="14" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="316" y="358" width="8"  height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="330" y="358" width="12" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="348" y="358" width="6"  height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="360" y="358" width="16" height="20" rx="2" fill="#1d4ed8"/>
+  <rect x="382" y="358" width="8"  height="20" rx="2" fill="#1d4ed8"/>
+</svg>
