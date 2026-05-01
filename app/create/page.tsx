@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import QRCode from 'qrcode';
-import { encodePersonData, PersonData } from '@/lib/encode';
+import { encodePersonData, decodePersonData, PersonData } from '@/lib/encode';
 import { uploadPhoto } from '@/lib/cloudinary';
 import { generatePDF } from '@/lib/pdfGen';
 import PhotoUpload from '@/components/PhotoUpload';
@@ -27,10 +27,16 @@ const emptyForm: FormFields = {
 export default function CreatePage() {
   const [fields, setFields] = useState<FormFields>(emptyForm);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [loadedPhotoUrl, setLoadedPhotoUrl] = useState('');
   const [photoPreview, setPhotoPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<{ qrDataUrl: string; cardUrl: string } | null>(null);
+
+  // Load from URL state
+  const [showLoader, setShowLoader] = useState(false);
+  const [loadUrl, setLoadUrl] = useState('');
+  const [loadUrlError, setLoadUrlError] = useState('');
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -45,18 +51,74 @@ export default function CreatePage() {
 
   function handlePhotoChange(file: File) {
     setPhotoFile(file);
+    setLoadedPhotoUrl('');
     setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  function handleLoadFromUrl() {
+    setLoadUrlError('');
+    if (!loadUrl.trim()) {
+      setLoadUrlError('Ingresá una URL');
+      return;
+    }
+
+    let d: string | null = null;
+    try {
+      const url = new URL(loadUrl.trim());
+      d = url.searchParams.get('d');
+    } catch {
+      setLoadUrlError('URL inválida. Debe ser una URL completa (ej: https://qr-id-five.vercel.app/card?d=...)');
+      return;
+    }
+
+    if (!d) {
+      setLoadUrlError('La URL no contiene datos de tarjeta (parámetro ?d= no encontrado)');
+      return;
+    }
+
+    let data: PersonData;
+    try {
+      data = decodePersonData(d);
+    } catch {
+      setLoadUrlError('No se pudieron leer los datos. Verificá que la URL sea de una tarjeta válida');
+      return;
+    }
+
+    if (!data.n || !data.l || !data.b || !data.a || !data.e || !data.p || !data.w || !data.ph) {
+      setLoadUrlError('Los datos de la tarjeta están incompletos o dañados');
+      return;
+    }
+
+    setFields({
+      nombre: data.n,
+      apellido: data.l,
+      fechaNacimiento: data.b,
+      direccion: data.a,
+      email: data.e,
+      telefono: data.p,
+      whatsapp: data.w,
+      descripcion: data.d || '',
+    });
+    setLoadedPhotoUrl(data.ph);
+    setPhotoPreview(data.ph);
+    setPhotoFile(null);
+    setLoadUrl('');
+    setShowLoader(false);
+    setError('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!photoFile) { setError('Seleccioná una foto antes de continuar.'); return; }
+    if (!photoFile && !loadedPhotoUrl) {
+      setError('Seleccioná una foto antes de continuar.');
+      return;
+    }
 
     setLoading(true);
     setError('');
 
     try {
-      const photoUrl = await uploadPhoto(photoFile);
+      const finalPhotoUrl = photoFile ? await uploadPhoto(photoFile) : loadedPhotoUrl;
 
       const personData: PersonData = {
         n: fields.nombre.trim(),
@@ -66,7 +128,7 @@ export default function CreatePage() {
         e: fields.email.trim(),
         p: fields.telefono.trim(),
         w: fields.whatsapp.trim(),
-        ph: photoUrl,
+        ph: finalPhotoUrl,
         ...(fields.descripcion.trim() && { d: fields.descripcion.trim() }),
       };
 
@@ -99,8 +161,12 @@ export default function CreatePage() {
     setResult(null);
     setFields(emptyForm);
     setPhotoFile(null);
+    setLoadedPhotoUrl('');
     setPhotoPreview('');
     setError('');
+    setLoadUrl('');
+    setLoadUrlError('');
+    setShowLoader(false);
   }
 
   if (result) {
@@ -118,9 +184,49 @@ export default function CreatePage() {
   return (
     <main className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-lg mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">🪪 Crear tarjeta</h1>
-          <p className="text-gray-500 mt-1">Completá los datos para generar el código QR y el PDF</p>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">🪪 Crear tarjeta</h1>
+            <p className="text-gray-500 mt-1">Completá los datos para generar el código QR y el PDF</p>
+          </div>
+        </div>
+
+        {/* Cargar desde tarjeta existente */}
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => { setShowLoader(prev => !prev); setLoadUrlError(''); }}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1.5 transition-colors"
+          >
+            <span className="text-xs">{showLoader ? '▲' : '▼'}</span>
+            Cargar desde tarjeta existente
+          </button>
+
+          {showLoader && (
+            <div className="mt-2 bg-white rounded-xl shadow p-4 space-y-2">
+              <p className="text-sm text-gray-500">
+                Pegá la URL de una tarjeta existente para pre-cargar todos sus datos
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={loadUrl}
+                  onChange={e => { setLoadUrl(e.target.value); setLoadUrlError(''); }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleLoadFromUrl(); } }}
+                  placeholder="https://qr-id-five.vercel.app/card?d=..."
+                  className="input-field text-sm flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={handleLoadFromUrl}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 rounded-lg transition-colors shrink-0"
+                >
+                  Cargar
+                </button>
+              </div>
+              {loadUrlError && <p className="text-red-500 text-xs">{loadUrlError}</p>}
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow p-6 space-y-5">

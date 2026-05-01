@@ -42,21 +42,30 @@ export default function CardTemplate({ data }: Props) {
     <div className="min-h-screen bg-gradient-to-b from-slate-800 to-slate-700 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
 
-        {/* Header: foto izquierda, nombre+descripción derecha */}
-        <div className="bg-gradient-to-br from-blue-700 to-blue-900 px-6 pt-6 pb-5">
-          <div className="flex items-start gap-4">
-            <img
-              src={data.ph}
-              alt={`${data.n} ${data.l}`}
-              className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover shrink-0"
-            />
-            <div className="min-w-0 flex-1 pt-1">
-              <h1 className="text-white text-xl font-bold leading-tight">{data.n}</h1>
-              <p className="text-blue-200 text-base leading-tight">{data.l}</p>
+        {/* Header: izquierda = nombre arriba + foto | derecha = descripción */}
+        <div className="bg-gradient-to-br from-blue-700 to-blue-900 px-5 pt-5 pb-5">
+          <div className="flex gap-4 items-start">
+
+            {/* Columna izquierda: nombre + foto */}
+            <div className="flex flex-col items-center gap-2 w-24 shrink-0">
+              <div className="text-center">
+                <p className="text-white text-sm font-bold leading-snug">{data.n}</p>
+                <p className="text-white text-sm font-bold leading-snug">{data.l}</p>
+              </div>
+              <img
+                src={data.ph}
+                alt={`${data.n} ${data.l}`}
+                className="w-20 h-20 rounded-full border-[3px] border-white shadow-lg object-cover"
+              />
+            </div>
+
+            {/* Columna derecha: descripción */}
+            <div className="flex-1 min-w-0">
               {data.d && (
-                <p className="text-blue-100 text-sm mt-2 leading-relaxed">{data.d}</p>
+                <p className="text-blue-100 text-base leading-relaxed">{data.d}</p>
               )}
             </div>
+
           </div>
         </div>
 
