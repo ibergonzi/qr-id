@@ -46,32 +46,31 @@ export default function CardTemplate({ data }: Props) {
     <div className="min-h-screen bg-gradient-to-b from-slate-800 to-slate-700 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
 
-        {/* Header: izquierda = nombre arriba + foto | derecha = descripción */}
-        <div className="bg-gradient-to-br from-blue-700 to-blue-900 px-5 pt-5 pb-5">
-          <div className="flex gap-4 items-start">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-blue-700 to-blue-900 px-5 pt-5 pb-4">
 
-            {/* Columna izquierda: nombre + foto */}
-            <div className="flex flex-col items-center gap-2 w-24 shrink-0">
-              <div className="text-center">
-                <p className="text-white text-sm font-bold leading-snug">{data.n}</p>
-                <p className="text-white text-sm font-bold leading-snug">{data.l}</p>
-              </div>
+          {/* Fila superior: foto 40% | descripción 60% */}
+          <div className="flex gap-3 items-start">
+            <div className="w-[40%] shrink-0">
               <img
                 src={data.ph}
                 alt={`${data.n} ${data.l}`}
                 onClick={() => setLightboxOpen(true)}
-                className="w-20 h-20 rounded-full border-[3px] border-white shadow-lg object-cover cursor-pointer active:opacity-80 transition-opacity"
+                className="w-full aspect-square rounded-full border-[3px] border-white shadow-lg object-cover cursor-pointer active:opacity-80 transition-opacity"
               />
             </div>
-
-            {/* Columna derecha: descripción */}
-            <div className="flex-1 min-w-0">
+            <div className="w-[60%] min-w-0">
               {data.d && (
                 <p className="text-blue-100 text-base leading-relaxed">{data.d}</p>
               )}
             </div>
-
           </div>
+
+          {/* Nombre completo — ancho total, centrado, serif */}
+          <p className="mt-3 text-white text-xl font-bold text-center font-serif tracking-wide leading-tight">
+            {data.n} {data.l}
+          </p>
+
         </div>
 
         {/* Información */}
