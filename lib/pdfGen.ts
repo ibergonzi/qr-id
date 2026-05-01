@@ -40,7 +40,7 @@ async function buildPDF(qrDataUrl: string, personName: string, cardUrl: string) 
   return pdf;
 }
 
-function safeName(personName: string): string {
+export function safeName(personName: string): string {
   return personName
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')

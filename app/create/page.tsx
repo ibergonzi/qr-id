@@ -4,7 +4,7 @@ import { useState } from 'react';
 import QRCode from 'qrcode';
 import { encodePersonData, decodePersonData, PersonData } from '@/lib/encode';
 import { uploadPhoto } from '@/lib/cloudinary';
-import { generatePDF, getPDFBlob } from '@/lib/pdfGen';
+import { generatePDF, getPDFBlob, safeName } from '@/lib/pdfGen';
 import PhotoUpload from '@/components/PhotoUpload';
 import QRPreview from '@/components/QRPreview';
 
@@ -183,10 +183,9 @@ export default function CreatePage() {
   async function handleSharePDF() {
     if (!result) return;
     const fullName = `${fields.nombre} ${fields.apellido}`;
-    const safeName = fullName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
     try {
       const blob = await getPDFBlob(result.qrDataUrl, fullName, result.cardUrl);
-      const file = new File([blob], `${safeName}-qr-id.pdf`, { type: 'application/pdf' });
+      const file = new File([blob], `${safeName(fullName)}-qr-id.pdf`, { type: 'application/pdf' });
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: `QR-ID — ${fullName}` });
       } else {
